@@ -99,6 +99,12 @@ if (APPLE) #this is needed by the unorthodox way hdf5 version 18 is installed
 	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH};/opt/local/lib/hdf5-18)
 endif()
 
+if (MSVC)
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/windows/bin/${CMAKE_LIBRARY_ARCHITECTURE}/ DESTINATION ${GUI_BIN_DIR}/shared CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
+elseif(LINUX)
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/linux/bin/ DESTINATION ${GUI_BIN_DIR}/shared)
+endif()
+
 #additional libraries needed
 find_package(HDF5 1.8 EXACT COMPONENTS CXX)
 if(NOT HDF5_FOUND) #if package finding fails, try manually
