@@ -20,7 +20,7 @@ jobs:
         package: "open-ephys-lib"
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch testing
         cd plugin-GUI/Build
         cmake -G "Visual Studio 16 2019" -A x64 .. 
         mkdir Release && cd Release
@@ -56,10 +56,6 @@ jobs:
         new_plugin_ver=$tag-API$plugin_api
         mkdir shared
         cp -v $build_dir/*.dll shared
-        if [ -d "libs" ]
-        then
-          cp -v libs/windows/bin/x64/*.dll shared
-        fi
         zipfile=${package}_${new_plugin_ver}.zip
         powershell Compress-Archive -Path "shared" -DestinationPath ${zipfile}
         user_info="$bintrayUser:$bintrayApiKey"
