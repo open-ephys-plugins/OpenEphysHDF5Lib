@@ -119,7 +119,7 @@ int HDF5FileBase::setAttribute(BaseDataType type, const void* data, String path,
 
 int HDF5FileBase::setAttributeArray(BaseDataType type, const void* data, int size, String path, String name)
 {
-    H5Location* loc;
+    H5Object* loc;
     Group gloc;
     DataSet dloc;
     Attribute attr;
@@ -209,7 +209,7 @@ int HDF5FileBase::setAttributeStr(const String& value, String path, String name)
 
 int HDF5FileBase::setAttributeStrArray(Array<const char*>& data, int maxSize, String path, String name)
 {
-	H5Location* loc;
+	H5Object* loc;
 	Group gloc;
 	DataSet dloc;
 	Attribute attr;
@@ -320,17 +320,17 @@ HDF5RecordingData* HDF5FileBase::getDataSet(String path)
     }
     catch (DataSetIException error)
     {
-        error.printError();
+        error.printErrorStack();
         return nullptr;
     }
     catch (FileIException error)
     {
-        error.printError();
+        error.printErrorStack();
         return nullptr;
     }
     catch (DataSpaceIException error)
     {
-        error.printError();
+        error.printErrorStack();
         return nullptr;
     }
 }
@@ -409,17 +409,17 @@ HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int dimension,
     }
     catch (DataSetIException error)
     {
-        error.printError();
+        error.printErrorStack();
         return nullptr;
     }
     catch (FileIException error)
     {
-        error.printError();
+        error.printErrorStack();
         return nullptr;
     }
     catch (DataSpaceIException error)
     {
-        error.printError();
+        error.printErrorStack();
         return nullptr;
     }
 

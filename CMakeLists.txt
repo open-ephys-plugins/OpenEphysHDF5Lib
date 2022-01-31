@@ -7,6 +7,8 @@ if (NOT DEFINED GUI_BASE_DIR)
 	endif()
 endif()
 
+set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architecture for Mac OS X" FORCE)
+
 set(COMMONLIB_NAME "OpenEphysHDF5")
 
 project(OE_COMMONLIB_${COMMONLIB_NAME})
@@ -61,6 +63,7 @@ install(FILES ${HEADER_FILES} DESTINATION ${GUI_COMMONLIB_DIR}/include)
 	
 #Libraries and compiler options
 if(MSVC)
+	add_compile_definitions(H5_BUILT_AS_DYNAMIC_LIB=1)
 	target_link_libraries(${COMMONLIB_NAME} ${GUI_BIN_DIR}/open-ephys.lib)
 	target_compile_options(${COMMONLIB_NAME} PRIVATE /sdl-)
 	
@@ -82,7 +85,7 @@ elseif(APPLE)
 	set_property(TARGET ${COMMONLIB_NAME} APPEND_STRING PROPERTY LINK_FLAGS
 	"-undefined dynamic_lookup")
 
-	install(TARGETS ${COMMONLIB_NAME} DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared)
+	install(TARGETS ${COMMONLIB_NAME} DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared-api8)
 	list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/libs/macos)
 endif()
 
@@ -97,15 +100,15 @@ endforeach()
 
 #copy the dependencies when installing
 if (MSVC)
-	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/windows/bin/${CMAKE_LIBRARY_ARCHITECTURE}/ DESTINATION ${GUI_BIN_DIR}/shared CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/windows/bin/ DESTINATION ${GUI_BIN_DIR}/shared CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
 elseif(LINUX)
 	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/linux/bin/ DESTINATION ${GUI_BIN_DIR}/shared)
 elseif(APPLE)
-	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/macos/bin/ DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared)
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/macos/bin/ DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared-api8)
 endif()
 
 #additional libraries needed
-find_package(HDF5 1.8 EXACT COMPONENTS CXX)
+find_package(HDF5 1.12.1 EXACT COMPONENTS CXX)
 if(NOT HDF5_FOUND) #if package finding fails, try manually
 #unset variables in case a wrong version has been found
 	unset(HDF5_LIBRARIES)
