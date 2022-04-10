@@ -65,7 +65,7 @@ install(FILES ${HEADER_FILES} DESTINATION ${GUI_COMMONLIB_DIR}/include)
 if(MSVC)
 	add_compile_definitions(H5_BUILT_AS_DYNAMIC_LIB=1)
 	target_link_libraries(${COMMONLIB_NAME} ${GUI_BIN_DIR}/open-ephys.lib)
-	target_compile_options(${COMMONLIB_NAME} PRIVATE /sdl-)
+	target_compile_options(${COMMONLIB_NAME} PRIVATE /sdl- /W0)
 	
 	install(TARGETS ${COMMONLIB_NAME} RUNTIME DESTINATION ${GUI_BIN_DIR}/shared CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
 	
