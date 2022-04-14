@@ -320,19 +320,34 @@ HDF5RecordingData* HDF5FileBase::getDataSet(String path)
     }
     catch (DataSetIException error)
     {
+        //std::cout << "DataSetIException" << std::endl;
         error.printErrorStack();
         return nullptr;
     }
     catch (FileIException error)
     {
+       // std::cout << "FileIException" << std::endl;
         error.printErrorStack();
         return nullptr;
     }
     catch (DataSpaceIException error)
     {
+       // std::cout << "DataSpaceIException" << std::endl;
         error.printErrorStack();
         return nullptr;
     }
+}
+
+void HDF5FileBase::createStringDataSet(String path, String value)
+{
+
+    DataType H5type = getH5Type(BaseDataType::STR(value.length()));
+
+    DataSpace dSpace(H5S_SCALAR);
+
+    ScopedPointer<H5::DataSet> dataset = new H5::DataSet(file->createDataSet(path.toUTF8(), H5type, dSpace));
+    dataset->write(value.getCharPointer(), H5type);
+
 }
 
 HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int sizeX, int chunkX, String path)

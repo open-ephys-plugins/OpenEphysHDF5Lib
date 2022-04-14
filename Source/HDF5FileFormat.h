@@ -98,6 +98,9 @@ protected:
 
     HDF5RecordingData* getDataSet(String path);
 
+	/** Creates a non-modifiable dataset with a string value */
+	void createStringDataSet(String path, String value);
+
     //aliases for createDataSet
 	HDF5RecordingData* createDataSet(BaseDataType type, int sizeX, int chunkX, String path);
 	HDF5RecordingData* createDataSet(BaseDataType type, int sizeX, int sizeY, int chunkX, String path);
