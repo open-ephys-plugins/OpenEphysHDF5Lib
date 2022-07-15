@@ -17,15 +17,13 @@ jobs:
     - name: setup
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch main
         cd plugin-GUI/Build && cmake -G "Xcode" ..
     - name: build
       run: |
         cd Build
         cmake -G "Xcode" ..
         xcodebuild -configuration Release
-        install_name_tool -change /usr/local/lib/libhdf5.10.dylib @loader_path/libhdf5.10.dylib Release/libOpenEphysHDF5.dylib
-        install_name_tool -change /usr/local/lib/libhdf5_cpp.15.dylib @loader_path/libhdf5_cpp.15.dylib Release/libOpenEphysHDF5.dylib
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
