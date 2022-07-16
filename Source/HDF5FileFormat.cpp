@@ -338,6 +338,31 @@ HDF5RecordingData* HDF5FileBase::getDataSet(String path)
     }
 }
 
+void HDF5FileBase::createReferenceDataSet(String path, StringArray references)
+{
+
+    const hsize_t size = references.size();
+    
+    DataType H5type = H5::ArrayType(H5::DataType(H5T_REFERENCE),
+                                    1, &size);
+
+    DataSpace dSpace(H5S_SCALAR);
+
+    ScopedPointer<H5::DataSet> dSet = new DataSet(file->createDataSet(path.toUTF8(), H5type, dSpace));
+
+    H5R_type_t buf[size];
+    
+    for (int i = 0; i < references.size(); i++)
+    {
+        H5R_type_t ref;
+        file->reference(&ref, references[i].getCharPointer());
+        buf[i] = ref;
+    }
+    
+    dSet->write(buf, H5type);
+
+}
+
 void HDF5FileBase::createStringDataSet(String path, String value)
 {
 

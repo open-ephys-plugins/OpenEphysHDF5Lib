@@ -100,6 +100,9 @@ protected:
 
 	/** Creates a non-modifiable dataset with a string value */
 	void createStringDataSet(String path, String value);
+    
+    /** Creates a dataset that holds an array of references to groups within the file */
+    void createReferenceDataSet(String path, StringArray references);
 
     //aliases for createDataSet
 	HDF5RecordingData* createDataSet(BaseDataType type, int sizeX, int chunkX, String path);
