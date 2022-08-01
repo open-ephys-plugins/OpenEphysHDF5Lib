@@ -139,6 +139,9 @@ protected:
     /** Creates a dataset that holds an array of references to groups within the file */
     void createReferenceDataSet(String path, StringArray references);
 
+	/** Creates a reference to another location in the file */
+	void createReference(String path, String reference);
+
     /** aliases for createDataSet */
 	HDF5RecordingData* createDataSet(BaseDataType type, int sizeX, int chunkX, String path);
 	HDF5RecordingData* createDataSet(BaseDataType type, int sizeX, int sizeY, int chunkX, String path);

@@ -342,6 +342,19 @@ HDF5RecordingData* HDF5FileBase::getDataSet(String path)
     }
 }
 
+
+void HDF5FileBase::createReference(String path, String reference)
+{
+
+    H5Lcreate_hard(file->getLocId(), 
+        reference.getCharPointer(), 
+        file->getLocId(), 
+        path.getCharPointer(),
+        H5P_DEFAULT,
+        H5P_DEFAULT);
+
+}
+
 void HDF5FileBase::createReferenceDataSet(String path, StringArray references)
 {
 
