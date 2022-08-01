@@ -346,41 +346,12 @@ void HDF5FileBase::createReferenceDataSet(String path, StringArray references)
 {
 
     const hsize_t size = references.size();
-   
-    std::cout << "Num references: " << size << std::endl;
-    std::cout << "TypeSize: " << size << std::endl;
-
-    /** Reference buffer -- deleted at end of function */
-    //OwnedArray<hobj_ref_t> buf;
 
     hobj_ref_t* rdata = (hobj_ref_t*)malloc(size * sizeof(hobj_ref_t));
 
-    //H5R_ref_t wdata[3];
-
     for (int i = 0; i < size; i++)
     {
-        //buf.add(new hobj_ref_t());
-
         file->reference(&rdata[i], references[i].getCharPointer());
-
-        char name[200];
-        size_t num = 200;
-
-        std::cout << "Input: " << references[i] << std::endl;
-        bool b = file->nameExists(references[i].getCharPointer());
-
-        std::cout << "Found location: " << b << std::endl;
-
-        Group group = file->openGroup(references[i].getCharPointer());
-
-        ssize_t n = H5Rget_name(file->getLocId(), H5R_OBJECT, &rdata[i], name, num);
-
-        std::cout << "Output: " <<  name << std::endl;
-
-        hid_t locId = H5Rdereference1(file->getLocId(), H5R_OBJECT, &rdata[i]);
-
-        std::cout << "Reference loc ID: " << locId << std::endl;
-        std::cout << "Group loc ID: " << group.getLocId() << std::endl;
     }
 
     hid_t space = H5Screate_simple(1, &size, NULL);
@@ -393,201 +364,17 @@ void HDF5FileBase::createReferenceDataSet(String path, StringArray references)
         H5P_DEFAULT, 
         H5P_DEFAULT);
 
-    herr_t status;
-    hsize_t start;
-    hsize_t count = 1;
-    hsize_t stride = 1;
-    hsize_t block = 1;
-
-    for (int i = 0; i < size; i++)
-    {
-        hsize_t coord[2];
-        coord[0] = i;
-        coord[1] = 0;
-
-        std::cout << "Buffer value " << i << ": " << rdata[i] << std::endl;
-
-        //status = H5Sselect_elements(space, H5S_SELECT_SET, 1, coord);
-
-        
-
-        //std::cout << "STATUS: " << status << std::endl;
-
-    }
-
-    status = H5Dwrite(dset,
+    herr_t status = H5Dwrite(dset,
         H5T_STD_REF_OBJ,
         H5S_ALL,
         H5S_ALL,
         H5P_DEFAULT,
         rdata);
 
-       // start = i;
-        //status = H5Sselect_hyperslab(space, H5S_SELECT_SET, &start, &count, &stride, &block);
-
-   
-  //  }
-
-
-   // status = H5Dclose(space);
-   // start = 1;
-
-   // space = H5Screate_simple(1, &size, NULL);
-  //  status = H5Sselect_hyperslab(space, H5S_SELECT_SET, &start, &count, &stride, &block);
-///
-  //  std::cout << "Buffer value 1: " << *(buf[1]) << std::endl;
-
-    //status = H5Dwrite(dset,
-    //    H5T_STD_REF_OBJ,
-    //    H5S_ALL,
-     //   space,
-    //    H5P_DEFAULT,
-     //   buf[1]);
-
-    /*
-
-    hsize_t coord[2];
-    coord[0] = 0;
-    coord[1] = 0;
-
-    status = H5Sselect_elements(space, H5S_SELECT_SET, 1, coord);
-
-    status = H5Dwrite(dset,
-        H5T_STD_REF_OBJ,
-        space,
-        space,
-        H5P_DEFAULT,
-        buf[0]);*/
-
-    
-
-    //coord[0] = 1;
-    //coord[1] = 0;
-
-    //status = H5Sselect_elements(space, H5S_SELECT_SET, 1, coord);
-
-    //status = H5Dwrite(dset,
-    //    H5T_STD_REF_OBJ,
-    //    space,
-    //    space,
-    //    H5P_DEFAULT,
-    //    buf[1]);
-
-    //std::cout << "STATUS for second element: " << status << std::endl;
-
-    
-
-    status = H5Dread(dset, H5T_STD_REF_OBJ, H5S_ALL, H5S_ALL, H5P_DEFAULT,
-        rdata);
-
-    H5O_type_t  objtype;
-
-    hid_t obj;
-
-    std::cout << "Reading references back out." << std::endl;
-   
-    for (int i = 0; i < size; i++) {
-
-        std::cout << "Index: " << i << std::endl;
-        /*
-         * Open the referenced object, get its name and type.
-         */
-        obj = H5Rdereference(dset, H5P_DEFAULT, H5R_OBJECT, &rdata[i]);
-
-        std::cout << "Address: " << rdata[i] << std::endl;
-
-        status = H5Rget_obj_type(dset, H5R_OBJECT, &rdata[i], &objtype);
-
-        /*
-         * Print the object type and close the object.
-         */
-        switch (objtype) {
-        case H5O_TYPE_GROUP:
-            printf("Group");
-            break;
-        case H5O_TYPE_DATASET:
-            printf("Dataset");
-            break;
-        case H5O_TYPE_NAMED_DATATYPE:
-            printf("Named Datatype");
-            break;
-        case H5O_TYPE_UNKNOWN:
-        case H5O_TYPE_NTYPES:
-            printf("Unknown");
-        }
-
-        /*
-         * Get the length of the name, allocate space, then retrieve
-         * the name.
-         */
-        const hsize_t size2 = 1 + H5Iget_name(obj, NULL, 0);
-
-        char name[200];
-        size_t num = 200;
-
-        ssize_t n = H5Rget_name(file->getLocId(), H5R_OBJECT, &rdata[i], name, num);
-
-        std::cout << "Found name: " << name << std::endl;
-
-        
-        status = H5Oclose(obj);
-
-    }
-
-    /*
-     * Close and release resources.
-     */
     free(rdata);
 
     status = H5Dclose(dset);
     status = H5Dclose(space);
-
-    
-
-    
-   
-    //status = H5Rcreate(&wdata[1], file->getHDFObjType(), "DS2", H5R_OBJECT, -1);
-
-    //DataSpace dSpace(H5S_SCALAR);
-
-    //std::cout << "Created DataSpace" << std::endl;
-
-    //DataType H5type = H5::ArrayType(H5::DataType(H5R_OBJECT),
-    //    1, &size);
-
-   //DataType H5type = H5::ArrayType(DataType(H5T_STD_REF_g),
-    //            1, &size);
-
-    //std::cout << "Created DataType" << std::endl;
-
-    //ScopedPointer<H5::DataSet> dSet = new DataSet(file->createDataSet(path.toUTF8(), H5type, dSpace));
-
-    //std::cout << "Created dSet at " << path << std::endl;
-
-   // 
-   //
-   // for (int i = 0; i < references.size(); i++)
-   // {
-
-   //     std::cout << "Getting reference " << references[i] << std::endl;
-
-    //    herr_t err = H5Rcreate_object(H5I_GROUP,
-    //        references[i].getCharPointer(),
-    //        H5I_GROUP,
-    //        buf[i]
-    //    );
-        
-        //file->reference(buf.getLast(), references[i].getCharPointer());
-   // }
-
-   // std::cout << "Writing buffer" << std::endl;
-    //dSet->write(buf.getRawDataPointer(), H5type);
-    //std::cout << "Wrote buffer" << std::endl;
-
-    //for (int i = 0; i < references.size(); i++)
-   // {
-    //    H5Rdestroy(buf[i]);
-    //}
 
 }
 
