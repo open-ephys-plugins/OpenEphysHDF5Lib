@@ -120,6 +120,69 @@ int HDF5FileBase::setAttribute(BaseDataType type, const void* data, String path,
     return setAttributeArray(type, data, 1, path, name);
 }
 
+int HDF5FileBase::setAttributeRef(String referencePath, String attributePath, String attributeName)
+{
+
+    H5Object* loc;
+    Group gloc;
+    DataSet dloc;
+    Attribute attr;
+
+    if (!opened) return -1;
+
+    try
+    {
+        try
+        {
+            gloc = file->openGroup(attributePath.toUTF8());
+            loc = &gloc;
+        }
+        catch (FileIException error) //If there is no group with that path, try a dataset
+        {
+            dloc = file->openDataSet(attributePath.toUTF8());
+            loc = &dloc;
+        }
+
+        if (loc->attrExists(attributeName.toUTF8()))
+        {
+            attr = loc->openAttribute(attributeName.toUTF8());
+        }
+        else
+        {
+            DataType data_type(H5T_STD_REF_OBJ);
+            DataSpace attr_space(H5S_SCALAR);
+            attr = loc->createAttribute(attributeName.toUTF8(), data_type, attr_space);
+        }
+
+        hobj_ref_t* rdata = (hobj_ref_t*) malloc(sizeof(hobj_ref_t));
+
+        file->reference(rdata, referencePath.getCharPointer());
+
+        attr.write(H5T_STD_REF_OBJ, rdata);
+
+        free(rdata);
+
+    }
+    catch (GroupIException error)
+    {
+        PROCESS_ERROR;
+    }
+    catch (AttributeIException error)
+    {
+        PROCESS_ERROR;
+    }
+    catch (DataSetIException error)
+    {
+        PROCESS_ERROR;
+    }
+    catch (FileIException error)
+    {
+        PROCESS_ERROR;
+    }
+
+    return 0;
+}
+
 
 int HDF5FileBase::setAttributeArray(BaseDataType type, const void* data, int size, String path, String name)
 {
@@ -346,9 +409,8 @@ HDF5RecordingData* HDF5FileBase::getDataSet(String path)
 void HDF5FileBase::createReference(String path, String reference)
 {
 
-    H5Lcreate_hard(file->getLocId(), 
-        reference.getCharPointer(), 
-        file->getLocId(), 
+    herr_t error = H5Lcreate_soft(reference.getCharPointer(), 
+        file->getLocId(),
         path.getCharPointer(),
         H5P_DEFAULT,
         H5P_DEFAULT);

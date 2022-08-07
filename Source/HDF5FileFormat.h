@@ -118,6 +118,9 @@ protected:
 	/** Sets a string attribute at a given location in the file */
     int setAttributeStr(const String& value, String path, String name);
 
+	/** Sets an object reference attribute for a given location in the file */
+	int setAttributeRef(String referencePath, String attributePath, String attributeName);
+
 	/** Sets an array attribute (of any data type) at a given location in the file */
 	int setAttributeArray(BaseDataType type, const void* data, int size, String path, String name);
 
