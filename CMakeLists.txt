@@ -7,7 +7,7 @@ if (NOT DEFINED GUI_BASE_DIR)
 	endif()
 endif()
 
-set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architecture for Mac OS X" FORCE)
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architecture for Mac OS X" FORCE)
 
 set(COMMONLIB_NAME "OpenEphysHDF5")
 
@@ -85,7 +85,7 @@ elseif(APPLE)
 	set_property(TARGET ${COMMONLIB_NAME} APPEND_STRING PROPERTY LINK_FLAGS
 	"-undefined dynamic_lookup")
 
-	install(TARGETS ${COMMONLIB_NAME} DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared-api8)
+	install(TARGETS ${COMMONLIB_NAME} DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared-api9)
 	list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/libs/macos)
 endif()
 
@@ -104,11 +104,11 @@ if (MSVC)
 elseif(LINUX)
 	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/linux/bin/ DESTINATION ${GUI_BIN_DIR}/shared)
 elseif(APPLE)
-	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/macos/bin/ DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared-api8)
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/macos/bin/ DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/shared-api9)
 endif()
 
 #additional libraries needed
-find_package(HDF5 1.12.1 EXACT COMPONENTS CXX)
+find_package(HDF5 1.14.3 EXACT COMPONENTS CXX)
 if(NOT HDF5_FOUND) #if package finding fails, try manually
 #unset variables in case a wrong version has been found
 	unset(HDF5_LIBRARIES)
