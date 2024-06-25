@@ -35,6 +35,13 @@ jobs:
       if: github.ref == 'refs/heads/juce8'
       env:
         artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
+        MACOS_CERTIFICATE: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        MACOS_CERTIFICATE_PWD: ${{ secrets.BUILD_CERTIFICATE_PWD }}
+        MACOS_CERTIFICATE_NAME: ${{ secrets.BUILD_CERTIFICATE_NAME }}
+        MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
+        PROD_MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
+        PROD_MACOS_NOTARIZATION_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
+        PROD_MACOS_NOTARIZATION_PWD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
         build_dir: "Build/Release"
         package: OpenEphysHDF5Lib-mac
       run: |
@@ -45,6 +52,23 @@ jobs:
         mkdir shared 
         cp -r $build_dir/*.dylib shared
         cp -r libs/macos/bin/* shared
+
+        # Turn our base64-encoded certificate back to a regular .p12 file
+        echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+
+        # We need to create a new keychain, otherwise using the certificate will prompt
+        # with a UI dialog asking for the certificate password, which we can't
+        # use in a headless CI environment
+        security create-keychain -p $MACOS_CI_KEYCHAIN_PWD build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p $MACOS_CI_KEYCHAIN_PWD build.keychain
+        security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CI_KEYCHAIN_PWD build.keychain
+        /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" -v shared/libOpenEphysHDF5.dylib --deep --strict --timestamp --options=runtime
+        /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" -v shared/libhdf5_cpp.310.dylib --deep --strict --timestamp --options=runtime
+        /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" -v shared/libhdf5.310.dylib --deep --strict --timestamp --options=runtime
+
+        /usr/bin/codesign -dv --verbose=4 shared/libOpenEphysHDF5.dylib
 
         zipfile=${package}_${new_plugin_ver}.zip
         zip -r -X $zipfile shared
