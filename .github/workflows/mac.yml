@@ -13,12 +13,17 @@ jobs:
         os: [macos-latest]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: setup
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git --branch main
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch development-juce8
         cd plugin-GUI/Build && cmake -G "Xcode" ..
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
     - name: build
       run: |
         cd Build
@@ -27,7 +32,7 @@ jobs:
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/juce8'
       env:
         artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
         build_dir: "Build/Release"
@@ -36,9 +41,11 @@ jobs:
         plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]" | tail -1)
         tag=$(git describe --tags $(git rev-list --tags --max-count=1))
         new_plugin_ver=$tag-API$plugin_api
+
         mkdir shared 
         cp -r $build_dir/*.dylib shared
         cp -r libs/macos/bin/* shared
+
         zipfile=${package}_${new_plugin_ver}.zip
         zip -r -X $zipfile shared
         curl -H "X-JFrog-Art-Api:$artifactoryApiKey" -T $zipfile "https://openephys.jfrog.io/artifactory/OpenEphysHDF5Lib-plugin/mac/$zipfile"

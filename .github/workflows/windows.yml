@@ -13,18 +13,20 @@ jobs:
         os: [windows-2019]
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: setup
       env: 
         repo: open-ephys-gui
         package: "open-ephys-lib"
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git --branch main
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch development-juce8
         cd plugin-GUI/Build
         cmake -G "Visual Studio 16 2019" -A x64 .. 
         mkdir Release && cd Release
-        curl -L https://openephysgui.jfrog.io/artifactory/Libraries/open-ephys-lib-v0.6.0.zip --output open-ephys-lib.zip 
+        curl -L https://openephysgui.jfrog.io/artifactory/Libraries/open-ephys-lib-v0.7.0.zip --output open-ephys-lib.zip 
         unzip open-ephys-lib.zip
       shell: bash
     - name: configure
@@ -42,7 +44,7 @@ jobs:
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/juce8'
       env:
         artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
         build_dir: "Build/Release"
