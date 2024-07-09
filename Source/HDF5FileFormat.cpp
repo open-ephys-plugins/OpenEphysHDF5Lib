@@ -21,16 +21,15 @@
 
  */
 
-#include <H5Cpp.h>
 #include "HDF5FileFormat.h"
-
+#include <H5Cpp.h>
 
 using namespace H5;
 using namespace OpenEphysHDF5;
 
 //HDF5FileBase
 
-HDF5FileBase::HDF5FileBase() : readyToOpen(false), opened(false)
+HDF5FileBase::HDF5FileBase() : readyToOpen (false), opened (false)
 {
     Exception::dontPrint();
 };
@@ -47,47 +46,49 @@ bool HDF5FileBase::isOpen() const
 
 bool HDF5FileBase::isReadyToOpen() const
 {
-	return readyToOpen;
+    return readyToOpen;
 }
 
 int HDF5FileBase::open()
 {
-	return open(-1);
+    return open (-1);
 }
 
-int HDF5FileBase::open(int nChans)
+int HDF5FileBase::open (int nChans)
 {
-    
-    if (!readyToOpen) return -1;
+    if (! readyToOpen)
+        return -1;
 
-    if (File(getFileName()).existsAsFile())
-        return open(false, nChans);
+    if (File (getFileName()).existsAsFile())
+        return open (false, nChans);
     else
-        return open(true, nChans);
-
+        return open (true, nChans);
 }
 
-int HDF5FileBase::open(bool newfile, int nChans)
+int HDF5FileBase::open (bool newfile, int nChans)
 {
-    int accFlags,ret=0;
+    int accFlags, ret = 0;
 
-    if (opened) return -1;
+    if (opened)
+        return -1;
 
     try
     {
-		FileAccPropList props = FileAccPropList::DEFAULT;
-		
-        if (nChans > 0)
-		{
-			props.setCache(0, 1667, 2 * 8 * 2 * CHUNK_XSIZE * nChans, 1);
-			//std::cout << "opening HDF5 " << getFileName() << " with nchans: " << nChans << std::endl;
-		}
+        FileAccPropList props = FileAccPropList::DEFAULT;
 
-        if (newfile) accFlags = H5F_ACC_TRUNC;
-        else accFlags = H5F_ACC_RDWR;
-        file = new H5File(getFileName().toUTF8(),accFlags,FileCreatPropList::DEFAULT,props);
+        if (nChans > 0)
+        {
+            props.setCache (0, 1667, 2 * 8 * 2 * CHUNK_XSIZE * nChans, 1);
+            //std::cout << "opening HDF5 " << getFileName() << " with nchans: " << nChans << std::endl;
+        }
+
+        if (newfile)
+            accFlags = H5F_ACC_TRUNC;
+        else
+            accFlags = H5F_ACC_RDWR;
+        file = new H5File (getFileName().toUTF8(), accFlags, FileCreatPropList::DEFAULT, props);
         opened = true;
-        
+
         if (newfile)
         {
             ret = createFileStructure();
@@ -99,7 +100,6 @@ int HDF5FileBase::open(bool newfile, int nChans)
             opened = false;
             std::cerr << "Error creating file structure" << std::endl;
         }
-
 
         return ret;
     }
@@ -115,53 +115,52 @@ void HDF5FileBase::close()
     opened = false;
 }
 
-int HDF5FileBase::setAttribute(BaseDataType type, const void* data, String path, String name)
+int HDF5FileBase::setAttribute (BaseDataType type, const void* data, String path, String name)
 {
-    return setAttributeArray(type, data, 1, path, name);
+    return setAttributeArray (type, data, 1, path, name);
 }
 
-int HDF5FileBase::setAttributeRef(String referencePath, String attributePath, String attributeName)
+int HDF5FileBase::setAttributeRef (String referencePath, String attributePath, String attributeName)
 {
-
     H5Object* loc;
     Group gloc;
     DataSet dloc;
     Attribute attr;
 
-    if (!opened) return -1;
+    if (! opened)
+        return -1;
 
     try
     {
         try
         {
-            gloc = file->openGroup(attributePath.toUTF8());
+            gloc = file->openGroup (attributePath.toUTF8());
             loc = &gloc;
         }
         catch (FileIException error) //If there is no group with that path, try a dataset
         {
-            dloc = file->openDataSet(attributePath.toUTF8());
+            dloc = file->openDataSet (attributePath.toUTF8());
             loc = &dloc;
         }
 
-        if (loc->attrExists(attributeName.toUTF8()))
+        if (loc->attrExists (attributeName.toUTF8()))
         {
-            attr = loc->openAttribute(attributeName.toUTF8());
+            attr = loc->openAttribute (attributeName.toUTF8());
         }
         else
         {
-            DataType data_type(H5T_STD_REF_OBJ);
-            DataSpace attr_space(H5S_SCALAR);
-            attr = loc->createAttribute(attributeName.toUTF8(), data_type, attr_space);
+            DataType data_type (H5T_STD_REF_OBJ);
+            DataSpace attr_space (H5S_SCALAR);
+            attr = loc->createAttribute (attributeName.toUTF8(), data_type, attr_space);
         }
 
-        hobj_ref_t* rdata = (hobj_ref_t*) malloc(sizeof(hobj_ref_t));
+        hobj_ref_t* rdata = (hobj_ref_t*) malloc (sizeof (hobj_ref_t));
 
-        file->reference(rdata, referencePath.getCharPointer());
+        file->reference (rdata, referencePath.getCharPointer());
 
-        attr.write(H5T_STD_REF_OBJ, rdata);
+        attr.write (H5T_STD_REF_OBJ, rdata);
 
-        free(rdata);
-
+        free (rdata);
     }
     catch (GroupIException error)
     {
@@ -183,8 +182,7 @@ int HDF5FileBase::setAttributeRef(String referencePath, String attributePath, St
     return 0;
 }
 
-
-int HDF5FileBase::setAttributeArray(BaseDataType type, const void* data, int size, String path, String name)
+int HDF5FileBase::setAttributeArray (BaseDataType type, const void* data, int size, String path, String name)
 {
     H5Object* loc;
     Group gloc;
@@ -193,42 +191,42 @@ int HDF5FileBase::setAttributeArray(BaseDataType type, const void* data, int siz
     DataType H5type;
     DataType origType;
 
-    if (!opened) return -1;
+    if (! opened)
+        return -1;
     try
     {
         try
         {
-            gloc = file->openGroup(path.toUTF8());
+            gloc = file->openGroup (path.toUTF8());
             loc = &gloc;
         }
         catch (FileIException error) //If there is no group with that path, try a dataset
         {
-            dloc = file->openDataSet(path.toUTF8());
+            dloc = file->openDataSet (path.toUTF8());
             loc = &dloc;
         }
 
-        H5type = getH5Type(type);
-        origType = getNativeType(type);
+        H5type = getH5Type (type);
+        origType = getNativeType (type);
 
         if (size > 1)
         {
             hsize_t dims = size;
-            H5type = ArrayType(H5type,1,&dims);
-            origType = ArrayType(origType,1,&dims);
+            H5type = ArrayType (H5type, 1, &dims);
+            origType = ArrayType (origType, 1, &dims);
         }
 
-        if (loc->attrExists(name.toUTF8()))
+        if (loc->attrExists (name.toUTF8()))
         {
-            attr = loc->openAttribute(name.toUTF8());
+            attr = loc->openAttribute (name.toUTF8());
         }
         else
         {
-            DataSpace attr_dataspace(H5S_SCALAR);
-            attr = loc->createAttribute(name.toUTF8(),H5type,attr_dataspace);
+            DataSpace attr_dataspace (H5S_SCALAR);
+            attr = loc->createAttribute (name.toUTF8(), H5type, attr_dataspace);
         }
 
-        attr.write(origType,data);
-
+        attr.write (origType, data);
     }
     catch (GroupIException error)
     {
@@ -250,105 +248,103 @@ int HDF5FileBase::setAttributeArray(BaseDataType type, const void* data, int siz
     return 0;
 }
 
-int HDF5FileBase::setAttributeStrArray(const StringArray& data, String path, String name)
+int HDF5FileBase::setAttributeStrArray (const StringArray& data, String path, String name)
 {
-	Array<const char*> dataPtrs;
-	int maxLength = 0;
-	int size = data.size();
-	for (int i = 0; i < size; i++)
-	{
-		int length = data[i].length();
-		if (length > maxLength) maxLength = length;
+    Array<const char*> dataPtrs;
+    int maxLength = 0;
+    int size = data.size();
+    for (int i = 0; i < size; i++)
+    {
+        int length = data[i].length();
+        if (length > maxLength)
+            maxLength = length;
 
-		dataPtrs.add(data[i].toUTF8());
-	}
-	return setAttributeStrArray(dataPtrs, maxLength, path, name);
+        dataPtrs.add (data[i].toUTF8());
+    }
+    return setAttributeStrArray (dataPtrs, maxLength, path, name);
 }
 
-
-int HDF5FileBase::setAttributeStr(const String& value, String path, String name)
+int HDF5FileBase::setAttributeStr (const String& value, String path, String name)
 {
-	Array<const char*> dataPtrs;
-	dataPtrs.add(value.toUTF8());
-	return setAttributeStrArray(dataPtrs, value.length(), path, name);
+    Array<const char*> dataPtrs;
+    dataPtrs.add (value.toUTF8());
+    return setAttributeStrArray (dataPtrs, value.length(), path, name);
 }
 
-
-int HDF5FileBase::setAttributeStrArray(Array<const char*>& data, int maxSize, String path, String name)
+int HDF5FileBase::setAttributeStrArray (Array<const char*>& data, int maxSize, String path, String name)
 {
-	H5Object* loc;
-	Group gloc;
-	DataSet dloc;
-	Attribute attr;
-	hsize_t dims[1];
+    H5Object* loc;
+    Group gloc;
+    DataSet dloc;
+    Attribute attr;
+    hsize_t dims[1];
 
-	if (!opened) return -1;
+    if (! opened)
+        return -1;
 
-	StrType type(PredType::C_S1, maxSize + 1);
-	type.setSize(H5T_VARIABLE);
+    StrType type (PredType::C_S1, maxSize + 1);
+    type.setSize (H5T_VARIABLE);
 
-	try
-	{
-		try
-		{
-			gloc = file->openGroup(path.toUTF8());
-			loc = &gloc;
-		}
-		catch (FileIException error) //If there is no group with that path, try a dataset
-		{
-			dloc = file->openDataSet(path.toUTF8());
-			loc = &dloc;
-		}
-
-		if (loc->attrExists(name.toUTF8()))
-		{
-			//attr = loc.openAttribute(name.toUTF8());
-			return -1; //string attributes cannot change size easily, better not allow overwritting.
-		}
-		else
-		{
-			DataSpace attr_dataspace;
-			int nStrings = data.size();
-			if (nStrings > 1)
-			{
-				dims[0] = nStrings;
-				attr_dataspace = DataSpace(1, dims);
-			}
-			else
-				attr_dataspace = DataSpace(H5S_SCALAR);
-			attr = loc->createAttribute(name.toUTF8(), type, attr_dataspace);
-		}
-		attr.write(type, data.getRawDataPointer());
-
-	}
-	catch (GroupIException error)
-	{
-		PROCESS_ERROR;
-	}
-	catch (AttributeIException error)
-	{
-		PROCESS_ERROR;
-	}
-	catch (FileIException error)
-	{
-		PROCESS_ERROR;
-	}
-	catch (DataSetIException error)
-	{
-		PROCESS_ERROR;
-	}
-
-
-	return 0;
-
-}
-
-int HDF5FileBase::createGroup(String path)
-{
-    if (!opened) return -1;
     try
     {
-        file->createGroup(path.toUTF8());
+        try
+        {
+            gloc = file->openGroup (path.toUTF8());
+            loc = &gloc;
+        }
+        catch (FileIException error) //If there is no group with that path, try a dataset
+        {
+            dloc = file->openDataSet (path.toUTF8());
+            loc = &dloc;
+        }
+
+        if (loc->attrExists (name.toUTF8()))
+        {
+            //attr = loc.openAttribute(name.toUTF8());
+            return -1; //string attributes cannot change size easily, better not allow overwritting.
+        }
+        else
+        {
+            DataSpace attr_dataspace;
+            int nStrings = data.size();
+            if (nStrings > 1)
+            {
+                dims[0] = nStrings;
+                attr_dataspace = DataSpace (1, dims);
+            }
+            else
+                attr_dataspace = DataSpace (H5S_SCALAR);
+            attr = loc->createAttribute (name.toUTF8(), type, attr_dataspace);
+        }
+        attr.write (type, data.getRawDataPointer());
+    }
+    catch (GroupIException error)
+    {
+        PROCESS_ERROR;
+    }
+    catch (AttributeIException error)
+    {
+        PROCESS_ERROR;
+    }
+    catch (FileIException error)
+    {
+        PROCESS_ERROR;
+    }
+    catch (DataSetIException error)
+    {
+        PROCESS_ERROR;
+    }
+
+    return 0;
+}
+
+int HDF5FileBase::createGroup (String path)
+{
+    if (! opened)
+        return -1;
+    try
+    {
+        file->createGroup (path.toUTF8());
     }
     catch (FileIException error)
     {
@@ -361,29 +357,32 @@ int HDF5FileBase::createGroup(String path)
     return 0;
 }
 
-int HDF5FileBase::createGroupIfDoesNotExist(String path)
+int HDF5FileBase::createGroupIfDoesNotExist (String path)
 {
-	if (!opened) return -1;
-	try {
-		file->childObjType(path.toRawUTF8());
-	}
-	catch (FileIException)
-	{
-		return createGroup(path);
-	}
-	return 0;
+    if (! opened)
+        return -1;
+    try
+    {
+        file->childObjType (path.toRawUTF8());
+    }
+    catch (FileIException)
+    {
+        return createGroup (path);
+    }
+    return 0;
 }
 
-HDF5RecordingData* HDF5FileBase::getDataSet(String path)
+HDF5RecordingData* HDF5FileBase::getDataSet (String path)
 {
     ScopedPointer<DataSet> data;
 
-    if (!opened) return nullptr;
+    if (! opened)
+        return nullptr;
 
     try
     {
-        data = new DataSet(file->openDataSet(path.toUTF8()));
-        return new HDF5RecordingData(data.release());
+        data = new DataSet (file->openDataSet (path.toUTF8()));
+        return new HDF5RecordingData (data.release());
     }
     catch (DataSetIException error)
     {
@@ -393,128 +392,123 @@ HDF5RecordingData* HDF5FileBase::getDataSet(String path)
     }
     catch (FileIException error)
     {
-       // std::cout << "FileIException" << std::endl;
+        // std::cout << "FileIException" << std::endl;
         error.printErrorStack();
         return nullptr;
     }
     catch (DataSpaceIException error)
     {
-       // std::cout << "DataSpaceIException" << std::endl;
+        // std::cout << "DataSpaceIException" << std::endl;
         error.printErrorStack();
         return nullptr;
     }
 }
 
-
-void HDF5FileBase::createReference(String path, String reference)
+void HDF5FileBase::createReference (String path, String reference)
 {
-
-    herr_t error = H5Lcreate_soft(reference.getCharPointer(), 
-        file->getLocId(),
-        path.getCharPointer(),
-        H5P_DEFAULT,
-        H5P_DEFAULT);
-
+    herr_t error = H5Lcreate_soft (reference.getCharPointer(),
+                                   file->getLocId(),
+                                   path.getCharPointer(),
+                                   H5P_DEFAULT,
+                                   H5P_DEFAULT);
 }
 
-void HDF5FileBase::createReferenceDataSet(String path, StringArray references)
+void HDF5FileBase::createReferenceDataSet (String path, StringArray references)
 {
-
     const hsize_t size = references.size();
 
-    hobj_ref_t* rdata = (hobj_ref_t*)malloc(size * sizeof(hobj_ref_t));
+    hobj_ref_t* rdata = (hobj_ref_t*) malloc (size * sizeof (hobj_ref_t));
 
     for (int i = 0; i < size; i++)
     {
-        file->reference(&rdata[i], references[i].getCharPointer());
+        file->reference (&rdata[i], references[i].getCharPointer());
     }
 
-    hid_t space = H5Screate_simple(1, &size, NULL);
+    hid_t space = H5Screate_simple (1, &size, NULL);
 
-    hid_t dset = H5Dcreate(file->getLocId(), 
-        path.getCharPointer(), 
-        H5T_STD_REF_OBJ, 
-        space, 
-        H5P_DEFAULT,
-        H5P_DEFAULT, 
-        H5P_DEFAULT);
+    hid_t dset = H5Dcreate (file->getLocId(),
+                            path.getCharPointer(),
+                            H5T_STD_REF_OBJ,
+                            space,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
 
-    herr_t status = H5Dwrite(dset,
-        H5T_STD_REF_OBJ,
-        H5S_ALL,
-        H5S_ALL,
-        H5P_DEFAULT,
-        rdata);
+    herr_t status = H5Dwrite (dset,
+                              H5T_STD_REF_OBJ,
+                              H5S_ALL,
+                              H5S_ALL,
+                              H5P_DEFAULT,
+                              rdata);
 
-    free(rdata);
+    free (rdata);
 
-    status = H5Dclose(dset);
-    status = H5Dclose(space);
-
+    status = H5Dclose (dset);
+    status = H5Dclose (space);
 }
 
-void HDF5FileBase::createStringDataSet(String path, String value)
+void HDF5FileBase::createStringDataSet (String path, String value)
 {
+    DataType H5type = getH5Type (BaseDataType::STR (value.length()));
 
-    DataType H5type = getH5Type(BaseDataType::STR(value.length()));
+    DataSpace dSpace (H5S_SCALAR);
 
-    DataSpace dSpace(H5S_SCALAR);
-
-    ScopedPointer<H5::DataSet> dataset = new H5::DataSet(file->createDataSet(path.toUTF8(), H5type, dSpace));
-    dataset->write(value.getCharPointer(), H5type);
-
+    ScopedPointer<H5::DataSet> dataset = new H5::DataSet (file->createDataSet (path.toUTF8(), H5type, dSpace));
+    dataset->write (value.getCharPointer(), H5type);
 }
 
-HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int sizeX, int chunkX, String path)
+HDF5RecordingData* HDF5FileBase::createDataSet (BaseDataType type, int sizeX, int chunkX, String path)
 {
-    int chunks[3] = {chunkX, 0, 0};
-    return createDataSet(type,1,&sizeX,chunks,path);
+    int chunks[3] = { chunkX, 0, 0 };
+    return createDataSet (type, 1, &sizeX, chunks, path);
 }
 
-HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int sizeX, int sizeY, int chunkX, String path)
+HDF5RecordingData* HDF5FileBase::createDataSet (BaseDataType type, int sizeX, int sizeY, int chunkX, String path)
 {
     int size[2];
-    int chunks[3] = {chunkX, 0, 0};
+    int chunks[3] = { chunkX, 0, 0 };
     size[0] = sizeX;
     size[1] = sizeY;
-    return createDataSet(type,2,size,chunks,path);
+    return createDataSet (type, 2, size, chunks, path);
 }
 
-HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int sizeX, int sizeY, int sizeZ, int chunkX, String path)
+HDF5RecordingData* HDF5FileBase::createDataSet (BaseDataType type, int sizeX, int sizeY, int sizeZ, int chunkX, String path)
 {
     int size[3];
-    int chunks[3] = {chunkX, 0, 0};
+    int chunks[3] = { chunkX, 0, 0 };
     size[0] = sizeX;
     size[1] = sizeY;
     size[2] = sizeZ;
-    return createDataSet(type,3,size,chunks,path);
+    return createDataSet (type, 3, size, chunks, path);
 }
 
-HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int sizeX, int sizeY, int sizeZ, int chunkX, int chunkY, String path)
+HDF5RecordingData* HDF5FileBase::createDataSet (BaseDataType type, int sizeX, int sizeY, int sizeZ, int chunkX, int chunkY, String path)
 {
     int size[3];
-    int chunks[3] = {chunkX, chunkY, 0};
+    int chunks[3] = { chunkX, chunkY, 0 };
     size[0] = sizeX;
     size[1] = sizeY;
     size[2] = sizeZ;
-    return createDataSet(type,3,size,chunks,path);
+    return createDataSet (type, 3, size, chunks, path);
 }
 
-HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int dimension, int* size, int* chunking, String path)
+HDF5RecordingData* HDF5FileBase::createDataSet (BaseDataType type, int dimension, int* size, int* chunking, String path)
 {
     ScopedPointer<DataSet> data;
     DSetCreatPropList prop;
-    if (!opened) return nullptr;
+    if (! opened)
+        return nullptr;
 
     //Right now this classes don't support datasets with rank > 3.
     //If it's needed in the future we can extend them to be of generic rank
-    if ((dimension > 3) || (dimension < 1)) return nullptr;
+    if ((dimension > 3) || (dimension < 1))
+        return nullptr;
 
-    DataType H5type = getH5Type(type);
+    DataType H5type = getH5Type (type);
 
     hsize_t dims[3], chunk_dims[3], max_dims[3];
 
-    for (int i=0; i < dimension; i++)
+    for (int i = 0; i < dimension; i++)
     {
         dims[i] = size[i];
         if (chunking[i] > 0)
@@ -531,11 +525,11 @@ HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int dimension,
 
     try
     {
-        DataSpace dSpace(dimension,dims,max_dims);
-        prop.setChunk(dimension,chunk_dims);
+        DataSpace dSpace (dimension, dims, max_dims);
+        prop.setChunk (dimension, chunk_dims);
 
-        data = new DataSet(file->createDataSet(path.toUTF8(),H5type,dSpace,prop));
-        return new HDF5RecordingData(data.release());
+        data = new DataSet (file->createDataSet (path.toUTF8(), H5type, dSpace, prop));
+        return new HDF5RecordingData (data.release());
     }
     catch (DataSetIException error)
     {
@@ -552,139 +546,140 @@ HDF5RecordingData* HDF5FileBase::createDataSet(BaseDataType type, int dimension,
         error.printErrorStack();
         return nullptr;
     }
-
-
 }
 
-H5::DataType HDF5FileBase::getNativeType(BaseDataType type)
+H5::DataType HDF5FileBase::getNativeType (BaseDataType type)
 {
-	H5::DataType baseType;
+    H5::DataType baseType;
 
-	switch (type.type)
-	{
-	case BaseDataType::Type::T_I8:
-		baseType = PredType::NATIVE_INT8;
-		break;
-	case BaseDataType::Type::T_I16:
-		baseType = PredType::NATIVE_INT16;
-		break;
-	case BaseDataType::Type::T_I32:
-		baseType = PredType::NATIVE_INT32;
-		break;
-	case BaseDataType::Type::T_I64:
-		baseType = PredType::NATIVE_INT64;
-		break;
-	case BaseDataType::Type::T_U8:
-		baseType = PredType::NATIVE_UINT8;
-		break;
-	case BaseDataType::Type::T_U16:
-		baseType = PredType::NATIVE_UINT16;
-		break;
-	case BaseDataType::Type::T_U32:
-		baseType = PredType::NATIVE_UINT32;
-		break;
-	case BaseDataType::Type::T_U64:
-		baseType = PredType::NATIVE_UINT64;
-		break;
-	case BaseDataType::Type::T_F32:
-		baseType = PredType::NATIVE_FLOAT;
-		break;
-	case BaseDataType::Type::T_F64:
-		baseType = PredType::NATIVE_DOUBLE;
-		break;
-	case BaseDataType::Type::T_STR:
-		return StrType(PredType::C_S1, type.typeSize);
-		break;
-	default:
-		baseType = PredType::NATIVE_INT32;
-	}
-	if (type.typeSize > 1)
-	{
-		hsize_t size = type.typeSize;
-		return ArrayType(baseType, 1, &size);
-	}
-	else return baseType;
+    switch (type.type)
+    {
+        case BaseDataType::Type::T_I8:
+            baseType = PredType::NATIVE_INT8;
+            break;
+        case BaseDataType::Type::T_I16:
+            baseType = PredType::NATIVE_INT16;
+            break;
+        case BaseDataType::Type::T_I32:
+            baseType = PredType::NATIVE_INT32;
+            break;
+        case BaseDataType::Type::T_I64:
+            baseType = PredType::NATIVE_INT64;
+            break;
+        case BaseDataType::Type::T_U8:
+            baseType = PredType::NATIVE_UINT8;
+            break;
+        case BaseDataType::Type::T_U16:
+            baseType = PredType::NATIVE_UINT16;
+            break;
+        case BaseDataType::Type::T_U32:
+            baseType = PredType::NATIVE_UINT32;
+            break;
+        case BaseDataType::Type::T_U64:
+            baseType = PredType::NATIVE_UINT64;
+            break;
+        case BaseDataType::Type::T_F32:
+            baseType = PredType::NATIVE_FLOAT;
+            break;
+        case BaseDataType::Type::T_F64:
+            baseType = PredType::NATIVE_DOUBLE;
+            break;
+        case BaseDataType::Type::T_STR:
+            return StrType (PredType::C_S1, type.typeSize);
+            break;
+        default:
+            baseType = PredType::NATIVE_INT32;
+    }
+    if (type.typeSize > 1)
+    {
+        hsize_t size = type.typeSize;
+        return ArrayType (baseType, 1, &size);
+    }
+    else
+        return baseType;
 }
 
-H5::DataType HDF5FileBase::getH5Type(BaseDataType type)
+H5::DataType HDF5FileBase::getH5Type (BaseDataType type)
 {
-	H5::DataType baseType;
+    H5::DataType baseType;
 
-	switch (type.type)
-	{
-	case BaseDataType::Type::T_I8:
-		baseType = PredType::STD_I8LE;
-		break;
-	case BaseDataType::Type::T_I16:
-		baseType = PredType::STD_I16LE;
-		break;
-	case BaseDataType::Type::T_I32:
-		baseType = PredType::STD_I32LE;
-		break;
-	case BaseDataType::Type::T_I64:
-		baseType = PredType::STD_I64LE;
-		break;
-	case BaseDataType::Type::T_U8:
-		baseType = PredType::STD_U8LE;
-		break;
-	case BaseDataType::Type::T_U16:
-		baseType = PredType::STD_U16LE;
-		break;
-	case BaseDataType::Type::T_U32:
-		baseType = PredType::STD_U32LE;
-		break;
-	case BaseDataType::Type::T_U64:
-		baseType = PredType::STD_U64LE;
-		break;
-	case BaseDataType::Type::T_F32:
-		return PredType::IEEE_F32LE;
-		break;
-	case BaseDataType::Type::T_F64:
-		baseType = PredType::IEEE_F64LE;
-		break;
-	case BaseDataType::Type::T_STR:
-		return StrType(PredType::C_S1, type.typeSize);
-		break;
-	default:
-		return PredType::STD_I32LE;
-	}
-	if (type.typeSize > 1)
-	{
-		hsize_t size = type.typeSize;
-		return ArrayType(baseType, 1, &size);
-	}
-	else return baseType;
+    switch (type.type)
+    {
+        case BaseDataType::Type::T_I8:
+            baseType = PredType::STD_I8LE;
+            break;
+        case BaseDataType::Type::T_I16:
+            baseType = PredType::STD_I16LE;
+            break;
+        case BaseDataType::Type::T_I32:
+            baseType = PredType::STD_I32LE;
+            break;
+        case BaseDataType::Type::T_I64:
+            baseType = PredType::STD_I64LE;
+            break;
+        case BaseDataType::Type::T_U8:
+            baseType = PredType::STD_U8LE;
+            break;
+        case BaseDataType::Type::T_U16:
+            baseType = PredType::STD_U16LE;
+            break;
+        case BaseDataType::Type::T_U32:
+            baseType = PredType::STD_U32LE;
+            break;
+        case BaseDataType::Type::T_U64:
+            baseType = PredType::STD_U64LE;
+            break;
+        case BaseDataType::Type::T_F32:
+            return PredType::IEEE_F32LE;
+            break;
+        case BaseDataType::Type::T_F64:
+            baseType = PredType::IEEE_F64LE;
+            break;
+        case BaseDataType::Type::T_STR:
+            return StrType (PredType::C_S1, type.typeSize);
+            break;
+        default:
+            return PredType::STD_I32LE;
+    }
+    if (type.typeSize > 1)
+    {
+        hsize_t size = type.typeSize;
+        return ArrayType (baseType, 1, &size);
+    }
+    else
+        return baseType;
 }
 
 //BaseDataType
 
-HDF5FileBase::BaseDataType::BaseDataType(HDF5FileBase::BaseDataType::Type t, size_t s)
-	: type(t), typeSize(s)
-{}
-
-HDF5FileBase::BaseDataType::BaseDataType()
-	: type(T_I32), typeSize(1)
-{}
-
-HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::STR(size_t size)
+HDF5FileBase::BaseDataType::BaseDataType (HDF5FileBase::BaseDataType::Type t, size_t s)
+    : type (t), typeSize (s)
 {
-	return HDF5FileBase::BaseDataType(T_STR, size);
 }
 
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U8 = HDF5FileBase::BaseDataType(T_U8, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U16 = HDF5FileBase::BaseDataType(T_U16, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U32 = HDF5FileBase::BaseDataType(T_U32, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U64 = HDF5FileBase::BaseDataType(T_U64, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I8 = HDF5FileBase::BaseDataType(T_I8, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I16 = HDF5FileBase::BaseDataType(T_I16, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I32 = HDF5FileBase::BaseDataType(T_I32, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I64 = HDF5FileBase::BaseDataType(T_I64, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::F32 = HDF5FileBase::BaseDataType(T_F32, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::F64 = HDF5FileBase::BaseDataType(T_F64, 1);
-const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::DSTR = HDF5FileBase::BaseDataType(T_STR, DEFAULT_STR_SIZE);
+HDF5FileBase::BaseDataType::BaseDataType()
+    : type (T_I32), typeSize (1)
+{
+}
 
+HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::STR (size_t size)
+{
+    return HDF5FileBase::BaseDataType (T_STR, size);
+}
 
-HDF5RecordingData::HDF5RecordingData(DataSet* data)
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U8 = HDF5FileBase::BaseDataType (T_U8, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U16 = HDF5FileBase::BaseDataType (T_U16, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U32 = HDF5FileBase::BaseDataType (T_U32, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::U64 = HDF5FileBase::BaseDataType (T_U64, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I8 = HDF5FileBase::BaseDataType (T_I8, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I16 = HDF5FileBase::BaseDataType (T_I16, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I32 = HDF5FileBase::BaseDataType (T_I32, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::I64 = HDF5FileBase::BaseDataType (T_I64, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::F32 = HDF5FileBase::BaseDataType (T_F32, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::F64 = HDF5FileBase::BaseDataType (T_F64, 1);
+const HDF5FileBase::BaseDataType HDF5FileBase::BaseDataType::DSTR = HDF5FileBase::BaseDataType (T_STR, DEFAULT_STR_SIZE);
+
+HDF5RecordingData::HDF5RecordingData (DataSet* data)
 {
     DataSpace dSpace;
     DSetCreatPropList prop;
@@ -694,8 +689,8 @@ HDF5RecordingData::HDF5RecordingData(DataSet* data)
     dSpace = dataSet->getSpace();
     prop = dataSet->getCreatePlist();
 
-    dimension = dSpace.getSimpleExtentDims(dims);
-    prop.getChunk(dimension,chunk);
+    dimension = dSpace.getSimpleExtentDims (dims);
+    prop.getChunk (dimension, chunk);
 
     this->size[0] = (int) dims[0];
     if (dimension > 1)
@@ -711,22 +706,22 @@ HDF5RecordingData::HDF5RecordingData(DataSet* data)
     this->xPos = 0;
     this->dSet = dataSet;
     this->rowXPos.clear();
-    this->rowXPos.insertMultiple(0,0,this->size[1]);
+    this->rowXPos.insertMultiple (0, 0, this->size[1]);
 }
 
 HDF5RecordingData::~HDF5RecordingData()
 {
-	//Safety
-	dSet->flush(H5F_SCOPE_GLOBAL);
+    //Safety
+    dSet->flush (H5F_SCOPE_GLOBAL);
 }
-int HDF5RecordingData::writeDataBlock(int xDataSize, HDF5FileBase::BaseDataType type, const void* data)
+int HDF5RecordingData::writeDataBlock (int xDataSize, HDF5FileBase::BaseDataType type, const void* data)
 {
-    return writeDataBlock(xDataSize,size[1],type,data);
+    return writeDataBlock (xDataSize, size[1], type, data);
 }
 
-int HDF5RecordingData::writeDataBlock(int xDataSize, int yDataSize, HDF5FileBase::BaseDataType type, const void* data)
+int HDF5RecordingData::writeDataBlock (int xDataSize, int yDataSize, HDF5FileBase::BaseDataType type, const void* data)
 {
-    hsize_t dim[3],offset[3];
+    hsize_t dim[3], offset[3];
     DataSpace fSpace;
     DataType nativeType;
 
@@ -737,14 +732,14 @@ int HDF5RecordingData::writeDataBlock(int xDataSize, int yDataSize, HDF5FileBase
     else
         dim[1] = size[1];
     dim[0] = xPos + xDataSize;
-    
+
     try
     {
         //First be sure that we have enough space
-        dSet->extend(dim);
+        dSet->extend (dim);
 
         fSpace = dSet->getSpace();
-        fSpace.getSimpleExtentDims(dim);
+        fSpace.getSimpleExtentDims (dim);
         size[0] = (int) dim[0];
         if (dimension > 1)
             size[1] = (int) dim[1];
@@ -754,17 +749,17 @@ int HDF5RecordingData::writeDataBlock(int xDataSize, int yDataSize, HDF5FileBase
         dim[1] = yDataSize;
         dim[2] = size[2];
 
-        DataSpace mSpace(dimension,dim);
+        DataSpace mSpace (dimension, dim);
         //select where to write
         offset[0] = xPos;
         offset[1] = 0;
         offset[2] = 0;
 
-        fSpace.selectHyperslab(H5S_SELECT_SET, dim, offset);
+        fSpace.selectHyperslab (H5S_SELECT_SET, dim, offset);
 
-        nativeType = HDF5FileBase::getNativeType(type);
+        nativeType = HDF5FileBase::getNativeType (type);
 
-        dSet->write(data,nativeType,mSpace,fSpace);
+        dSet->write (data, nativeType, mSpace, fSpace);
         xPos += xDataSize;
     }
     catch (DataSetIException error)
@@ -778,48 +773,48 @@ int HDF5RecordingData::writeDataBlock(int xDataSize, int yDataSize, HDF5FileBase
     return 0;
 }
 
-
-int HDF5RecordingData::writeDataRow(int yPos, int xDataSize, HDF5FileBase::BaseDataType type, const void* data)
+int HDF5RecordingData::writeDataRow (int yPos, int xDataSize, HDF5FileBase::BaseDataType type, const void* data)
 {
-    hsize_t dim[2],offset[2];
+    hsize_t dim[2], offset[2];
     DataSpace fSpace;
     DataType nativeType;
-    if (dimension > 2) return -4; //We're not going to write rows in datasets bigger than 2d.
+    if (dimension > 2)
+        return -4; //We're not going to write rows in datasets bigger than 2d.
     //    if (xDataSize != rowDataSize) return -2;
-    if ((yPos < 0) || (yPos >= size[1])) return -2;
+    if ((yPos < 0) || (yPos >= size[1]))
+        return -2;
 
     try
     {
-        if (rowXPos[yPos]+xDataSize > size[0])
+        if (rowXPos[yPos] + xDataSize > size[0])
         {
             dim[1] = size[1];
             dim[0] = rowXPos[yPos] + xDataSize;
-            dSet->extend(dim);
+            dSet->extend (dim);
 
             fSpace = dSet->getSpace();
-            fSpace.getSimpleExtentDims(dim);
+            fSpace.getSimpleExtentDims (dim);
             size[0] = (int) dim[0];
         }
-        if (rowXPos[yPos]+xDataSize > xPos)
+        if (rowXPos[yPos] + xDataSize > xPos)
         {
-            xPos = rowXPos[yPos]+xDataSize;
+            xPos = rowXPos[yPos] + xDataSize;
         }
 
         dim[0] = xDataSize;
         dim[1] = 1;
-        DataSpace mSpace(dimension,dim);
+        DataSpace mSpace (dimension, dim);
 
         fSpace = dSet->getSpace();
         offset[0] = rowXPos[yPos];
         offset[1] = yPos;
-        fSpace.selectHyperslab(H5S_SELECT_SET, dim, offset);
+        fSpace.selectHyperslab (H5S_SELECT_SET, dim, offset);
 
-        nativeType = HDF5FileBase::getNativeType(type);
+        nativeType = HDF5FileBase::getNativeType (type);
 
+        dSet->write (data, nativeType, mSpace, fSpace);
 
-        dSet->write(data,nativeType,mSpace,fSpace);
-
-        rowXPos.set(yPos,rowXPos[yPos] + xDataSize);
+        rowXPos.set (yPos, rowXPos[yPos] + xDataSize);
     }
     catch (DataSetIException error)
     {
@@ -836,9 +831,8 @@ int HDF5RecordingData::writeDataRow(int yPos, int xDataSize, HDF5FileBase::BaseD
     return 0;
 }
 
-void HDF5RecordingData::getRowXPositions(Array<uint32>& rows)
+void HDF5RecordingData::getRowXPositions (Array<uint32>& rows)
 {
     rows.clear();
-    rows.addArray(rowXPos);
+    rows.addArray (rowXPos);
 }
-
